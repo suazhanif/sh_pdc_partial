@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sh_pdc_account_setting_partial_inherit" model="ir.ui.view">
+        <field name="name">sh.pdc.account.setting.partial.inherit</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="sh_pdc.sh_pdc_account_setting_inherit"/>
+        <field name="arch" type="xml">
+            <block name="sh_pdc_payment" position="inside">
+                <setting help="How many times a Post Dated Cheque may be redeposited after a partial bank collection before the remaining balance must be settled by bank transfer">
+                    <field name="pdc_max_redeposit_attempts"/>
+                </setting>
+            </block>
+        </field>
+    </record>
+</odoo>

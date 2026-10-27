@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- PDC Form: hide the old one-shot Bounce/Done buttons and drive
+         'deposited' / 'partial' / 'legal' PDCs through the new bank-response
+         flow so received_amount / redeposit_count stay accurate. -->
+    <record id="sh_pdc_payment_form_view_partial_inherit" model="ir.ui.view">
+        <field name="name">sh.pdc.wizard.partial.form</field>
+        <field name="model">pdc.wizard</field>
+        <field name="inherit_id" ref="sh_pdc.sh_pdc_payment_form_view"/>
+        <field name="arch" type="xml">
+
+            <button name="action_bounced" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </button>
+
+            <button name="action_done" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </button>
+
+            <!-- The base "Deposit" button also redeposits a Bounced cheque; gate it
+                 by the shared attempt limit so bounces consume the same 3 tries. -->
+            <button name="action_deposited" position="attributes">
+                <attribute name="invisible">state not in ['registered','returned','bounced'] or (state == 'bounced' and not can_redeposit)</attribute>
+            </button>
+
+            <button name="action_done" position="after">
+                <!-- Deposited: ask the bank result and process it -->
+                <button name="action_open_bank_response_wizard" class="oe_highlight"
+                        invisible="state != 'deposited'"
+                        string="Process Bank Response" type="object"/>
+
+                <!-- Partially Paid, still within the allowed number of attempts:
+                     re-present the same cheque to the bank -->
+                <button name="action_redeposit_partial" class="oe_highlight"
+                        invisible="state != 'partial' or not can_redeposit"
+                        string="Redeposit" type="object"/>
+
+                <!-- Partially Paid or Bounced but redeposit attempts are exhausted -->
+                <button name="action_escalate_to_legal" class="oe_highlight"
+                        invisible="state not in ['partial','bounced'] or can_redeposit"
+                        string="Escalate to Legal" type="object"
+                        confirm="Escalate this PDC to Legal collection? This does not delete any accounting entries; the remaining balance stays open."/>
+
+                <!-- Manual escalate is also allowed anytime while Partially Paid or Bounced -->
+                <button name="action_escalate_to_legal" class="btn-secondary"
+                        invisible="state not in ['partial','bounced'] or not can_redeposit"
+                        string="Escalate to Legal Now" type="object"
+                        confirm="Escalate this PDC to Legal collection now, instead of continuing to redeposit?"/>
+
+                <!-- The customer settled the balance another way -->
+                <button name="action_open_reconcile_payment_wizard" class="oe_highlight"
+                        invisible="state not in ['partial','legal','bounced'] or balance_amount &lt;= 0"
+                        string="Reconcile with Another Payment" type="object"/>
+
+                <!-- Escalated to Legal: allow reopening if the customer resumes contact -->
+                <button name="action_reopen_from_legal" class="btn-secondary"
+                        invisible="state != 'legal'"
+                        string="Reopen" type="object"
+                        confirm="Reopen this PDC back to Partially Paid?"/>
+            </button>
+
+            <field name="state" position="attributes">
+                <attribute name="statusbar_visible">draft,registered,deposited,partial,legal,done</attribute>
+            </field>
+
+            <field name="bank_id" position="after">
+                <field name="received_amount" widget="monetary"/>
+                <field name="balance_amount" widget="monetary"/>
+                <field name="redeposit_count"/>
+                <field name="max_redeposit_attempts"/>
+                <field name="can_redeposit" invisible="1"/>
+                <field name="legal_escalation_date" invisible="state != 'legal'"/>
+            </field>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Bank Presentation History" name="pdc_deposit_history">
+                    <field name="deposit_history_ids" readonly="1">
+                        <list>
+                            <field name="attempt_number"/>
+                            <field name="date"/>
+                            <field name="available_amount"/>
+                            <field name="cleared_amount"/>
+                            <field name="result"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- PDC List: surface the new state -->
+    <record id="sh_pdc_list_view_partial_inherit" model="ir.ui.view">
+        <field name="name">sh.pdc.list.view.partial</field>
+        <field name="model">pdc.wizard</field>
+        <field name="inherit_id" ref="sh_pdc.sh_pdc_list_view"/>
+        <field name="arch" type="xml">
+            <field name="payment_amount" position="after">
+                <field name="received_amount" optional="hide" sum="Total Received"/>
+                <field name="balance_amount" optional="hide" sum="Total Balance"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- PDC Search: filter on Partially Paid / Escalated to Legal -->
+    <record id="view_sh_pdc_filter_partial_inherit" model="ir.ui.view">
+        <field name="name">pdc.payment.select.partial</field>
+        <field name="model">pdc.wizard</field>
+        <field name="inherit_id" ref="sh_pdc.view_sh_pdc_filter"/>
+        <field name="arch" type="xml">
+            <filter name="deposited" position="after">
+                <filter name="partial" string="Partially Paid" domain="[('state','=','partial')]"/>
+                <filter name="legal" string="Escalated to Legal" domain="[('state','=','legal')]"/>
+            </filter>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pdc_reconcile_payment_wizard_form" model="ir.ui.view">
+        <field name="name">pdc.reconcile.payment.wizard.form</field>
+        <field name="model">pdc.reconcile.payment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reconcile with Another Payment">
+                <field name="currency_id" invisible="1"/>
+                <field name="pdc_id" invisible="1"/>
+                <group>
+                    <field name="balance_amount" widget="monetary"/>
+                    <field name="journal_id" options="{'no_create':1,'no_create_edit':1}"/>
+                    <field name="payment_date"/>
+                    <field name="reference"/>
+                </group>
+                <div class="text-muted">
+                    Use this when the customer settles the remaining balance directly,
+                    by cash or bank transfer, instead of the cheque being redeposited again.
+                    This will close the PDC as Done.
+                </div>
+                <footer>
+                    <button name="action_confirm" string="Confirm" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-default" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

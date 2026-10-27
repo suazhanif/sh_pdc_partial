@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pdc_bank_response_wizard_form" model="ir.ui.view">
+        <field name="name">pdc.bank.response.wizard.form</field>
+        <field name="model">pdc.bank.response.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Process Bank Response">
+                <field name="currency_id" invisible="1"/>
+                <field name="pdc_id" invisible="1"/>
+                <group>
+                    <group>
+                        <field name="payment_amount" widget="monetary"/>
+                        <field name="received_amount" widget="monetary"/>
+                        <field name="balance_amount" widget="monetary"/>
+                    </group>
+                    <group>
+                        <field name="redeposit_count"/>
+                        <field name="max_redeposit_attempts"/>
+                    </group>
+                </group>
+                <group>
+                    <field name="outcome" widget="radio"/>
+                    <field name="deducted_amount" widget="monetary"
+                           invisible="outcome != 'partial'"
+                           required="outcome == 'partial'"/>
+                    <field name="note" placeholder="Optional note about this bank presentation"/>
+                </group>
+                <div class="text-muted" invisible="outcome != 'full'">
+                    The full balance due will be collected and the PDC will be marked <b>Done</b>.
+                </div>
+                <div class="text-muted" invisible="outcome != 'none'">
+                    No funds were available; the PDC will be marked <b>Bounced</b>.
+                </div>
+                <div class="text-muted" invisible="outcome != 'partial'">
+                    The bank deducted and stamped/returned the cheque for the rest. The PDC will be
+                    marked <b>Partially Paid</b> and can be redeposited again, up to the configured limit.
+                </div>
+                <footer>
+                    <button name="action_confirm" string="Confirm" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-default" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
